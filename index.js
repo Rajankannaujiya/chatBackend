@@ -19,24 +19,17 @@ import http from 'http'
 import { Server as SocketIOServer } from 'socket.io';
 import createMemoryStore from "memorystore";
 import { Db_name } from './constants.js';
+import MongoStore from 'connect-mongo';
 // dotenv.config()
 // console.log(process.env)
 var upload = multer();
 
-const fileName = fileURLToPath(import.meta.url);
-
-const __dirname = path.dirname(fileName);
 
 const app = express();
 const server = http.createServer(app); // Create an HTTP server
-const MemoryStore = createMemoryStore(session);
-const store = new MemoryStore({
-  checkPeriod: 60000
-});
 
-
-app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use(express.json());
+app.use(cors());
 
 // connecting to mongodb
 
@@ -53,23 +46,20 @@ async function connectToDB(){
 
 connectToDB();
 // Middleware
-app.use(cors(
-  {
-    origin:"*",
-    credentials:true
-  }
-));
-app.use(express.static(__dirname));
-app.use(express.json());
+
 
 app.use(session({
-  cookie: {
-    maxAge: 60000,
-  },
-  store: store,
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,
+  store: MongoStore.create({
+    mongoUrl: `${process.env.MONGO_URI}/${Db_name}`,
+    collectionName: 'sessions'
+  }),
+  cookie: {
+    maxAge: 60000,  // Adjust as necessary
+    secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
+  },
 }));
 
 app.use(passport.initialize());
@@ -92,15 +82,15 @@ passport.deserializeUser(async function (id, done) {
 });
 
 
+app.get("/",(req,res)=>{
+  res.send("hello there")
+})
 
-
-app.use((req, res, next) => {
-  res.locals.isAuthenticated = req.isAuthenticated();
-  next();
-});
-
+console.log('Initializing /users routes');
 app.use("/users", Router);
-app.use("/", chatRouter)
+
+console.log('Initializing /chats routes');
+app.use("/chats", chatRouter);
 
 // Start the server
 const port = process.env.PORT || 5000;

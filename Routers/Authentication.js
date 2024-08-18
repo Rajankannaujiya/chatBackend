@@ -7,7 +7,7 @@ import passport from 'passport';
 const Router = express.Router();
 
 
-
+console.log("router in auth")
 Router.get("/fetchAllUsers", ensureAuthenticated, async (req, res) => {
     try {
         const keyword = req.query.search ? {
