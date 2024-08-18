@@ -29,7 +29,10 @@ const app = express();
 const server = http.createServer(app); // Create an HTTP server
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: "*"
+}
+  ));
 
 // connecting to mongodb
 
